@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ino.web.freeBoard.mapper.freeBoardMapper">
+	
+	<select id="freeBoardTotalCount" resultType="int" >
+		SELECT COUNT(*) FROM freeboard 
+	   <where>
+	       	<if test='searchWord != "" and searchColumn == "DCOM1" '>
+	       		AND num = ${searchWord}
+	       	</if>
+	       	<if test='searchWord != "" and searchColumn == "DCOM2" '>
+	       		AND title LIKE '%${searchWord}%'
+	       	</if>
+	        <if test='startDate != ""'>
+		     	AND TO_CHAR(regdate, 'YYMMDD') BETWEEN #{startDate} AND #{endDate}
+		     </if>
+        </where>
+	</select>
+
+	<!-- resultType="ino.web.board.dto.BoardDto" -->
+	<select id="freeBoardGetList"  resultType="freeBoardDto" > 
+		SELECT * FROM(
+	        SELECT ROWNUM R, DTO.* FROM
+	        (SELECT  
+				CASE  code_type
+		            WHEN '01' THEN '자유'
+		            WHEN '02' THEN '익명'
+		            WHEN '03' THEN 'QNA'
+	        	END AS codeType, 
+	        	num, name, title, content, TO_CHAR(regdate , 'YYYY/MM/DD') AS regdate 
+	        FROM freeboard 
+	        <where>
+		       	<if test='searchWord != "" and searchColumn == "DCOM1"'>
+		       		AND num = ${searchWord}
+		       	</if>
+		       	<if test='searchWord != "" and searchColumn == "DCOM2"'>
+		       		AND title LIKE '%${searchWord}%'
+		       	</if>
+		        <if test='startDate != ""'>
+			     	AND TO_CHAR(regdate, 'YYMMDD') BETWEEN #{startDate} AND #{endDate}
+				</if>
+	        </where>
+	        ORDER BY num DESC
+	        ) DTO
+		)
+		WHERE R BETWEEN ${start} AND ${end}
+	</select>
+
+	<insert id="freeBoardInsertPro" parameterType="freeBoardDto">
+		INSERT INTO FREEBOARD(code_type,NUM, TITLE, NAME, REGDATE, CONTENT)
+		VALUES( #{codeType}, FREEBOARDNUM_SEQ.NEXTVAL, #{title}, #{name}, SYSDATE, #{content})
+	</insert>
+
+	<select id="freeBoardDetailByNum" resultType="freeBoardDto" parameterType="int">
+		SELECT code_type, NUM, TITLE, NAME, TO_CHAR(REGDATE,'YYYY/MM/DD') REGDATE, CONTENT FROM FREEBOARD
+		WHERE NUM=#{num}
+	</select>
+
+	<select id="freeBoardNewNum" resultType="int">
+		SELECT MAX(NUM)
+		FROM FREEBOARD
+	</select>
+
+	<update id="freeBoardModify" parameterType="freeBoardDto">
+		UPDATE FREEBOARD
+		SET TITLE = #{title}
+				, CONTENT = #{content}
+				, code_type = #{codeType}
+		WHERE NUM = #{num}
+
+	</update>
+
+	<update id="freeBoardDelete" parameterType="int">
+		DELETE FROM FREEBOARD
+		WHERE NUM
+		= #{num}
+
+	</update>
+	
+	
+	
+
+</mapper>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ino.web.commonCode.mapper" >
+	
+	<select id="selectCommonCodeList" resultType="java.util.HashMap">
+		SELECT * FROM codem
+	</select>
+	
+	
+	<select id="searchOptions" resultType="java.util.HashMap" > 
+		SELECT 
+		    M.code,
+		    code_name,
+		    dcode,
+		    dcode_name
+		FROM codem M INNER JOIN coded D
+    		ON M.code = D.code
+		WHERE 
+		    M.use_yn = #{masterUseYN} AND 
+		    D.use_yn = #{detailUseYN} AND 
+		    D.code = ANY
+	    	<foreach collection="list" item="codeName" index="idx" open="(" separator="," close=")" >
+				#{codeName}
+			</foreach>
+	</select>
+	
+	<select id="getDTable" resultType="java.util.HashMap">
+		SELECT * FROM coded WHERE code = #{code} ORDER BY dcode ASC
+	</select>
+	
+	<insert id="insertCommonCode">
+		INSERT ALL
+		<foreach collection="list"  item="item" >
+			<if test='item.dataFlag == "insert" and item.DCODE != "" and item.DCODE_NAME != ""'>
+			INTO coded (code,dcode,dcode_name,use_yn)
+			VALUES
+			(
+				#{item.CODE},
+				#{item.DCODE},
+				#{item.DCODE_NAME},
+				#{item.USE_YN}
+			)
+			</if>
+		</foreach>
+		SELECT * FROM DUAL
+	</insert>
+	
+	<update id="updateCommonCode">
+		BEGIN
+		<foreach collection="list" item="item" >
+			<if test="item.dataFlag =='update'">
+				UPDATE coded SET dcode_name = #{item.DCODE_NAME} , use_yn = #{item.USE_YN} WHERE dcode = #{item.DCODE};
+			</if>
+		</foreach>
+		END;
+	</update>
+	
+	<delete id="deleteCommonCode">
+		<!-- BEGIN -->
+			DELETE coded WHERE dcode IN 
+			<foreach collection="list" item="item" open="(" separator="," close=")">
+				<if test='item.dataFlag == "delete"'>
+					#{item.DCODE}		
+				</if>
+			</foreach>
+		<!-- END; -->
+	</delete>
+</mapper>
